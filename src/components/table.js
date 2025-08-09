@@ -12,14 +12,44 @@ export function initTable(settings, onAction) {
     const root = cloneTemplate(tableTemplate);
 
     // @todo: #1.2 —  вывести дополнительные шаблоны до и после таблицы
-
+before.forEach(subName => {                            // перебираем нужный массив идентификаторов
+    root[subName] = cloneTemplate(subName);            // клонируем и получаем объект, сохраняем в таблице
+    root.container.prepend(root[subName].container);    // добавляем к таблице до
+});
+after.forEach(subName => {                            // перебираем нужный массив идентификаторов
+    root[subName] = cloneTemplate(subName);            // клонируем и получаем объект, сохраняем в таблице
+    root.container.append(root[subName].container);    // добавляем к таблице после (append) 
+});
     // @todo: #1.3 —  обработать события и вызвать onAction()
 
-    const render = (data) => {
-        // @todo: #1.1 — преобразовать данные в массив строк на основе шаблона rowTemplate
-        const nextRows = [];
-        root.elements.rows.replaceChildren(...nextRows);
-    }
+  root.container.addEventListener('change', () => {
+        onAction(); // Вызов без аргументов для change
+    });
 
-    return {...root, render};
+    root.container.addEventListener('reset', () => {
+        setTimeout(onAction); // Отложенный вызов для reset
+    });
+
+    root.container.addEventListener('submit', (e) => {
+        e.preventDefault(); // Предотвращаем стандартное поведение
+        onAction(e.submitter); // Передаем сабмиттер
+    });
+ const render = (data) => {
+    // @todo: #1.1 — преобразовать данные в массив строк на основе шаблона rowTemplate
+    const nextRows = data.map(item => {
+        const row = cloneTemplate(rowTemplate);
+        
+        Object.keys(item).forEach(key => {
+            if (key in row.elements) {
+                row.elements[key].textContent = item[key];
+            }
+        });
+        
+        return row.container;
+    });
+    
+    root.elements.rows.replaceChildren(...nextRows);
 }
+
+return {...root, render};
+  }
